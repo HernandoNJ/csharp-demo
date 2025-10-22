@@ -1,8 +1,0 @@
-﻿using MyDevExercises;
-
-var ex = new Exercises();
-//ex.PrintNewWords();
-//ex.PrintArraySumText();
-//ex.CheckIntArrayValues();
-//ex.TripletsCalculation();
-ex.CalculateVeryBigSum();
