@@ -41,7 +41,7 @@ The following topics are planned for future implementation and study within this
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/HernandoNJ/dotnet-practice
+    git clone https://github.com/HernandoNJ/csharp-demo
     ```
 2.  **Open the solution file** (`.sln`) in Visual Studio or your preferred IDE.
 3.  Add one or more existing projects to the solution from its folder. <br>
