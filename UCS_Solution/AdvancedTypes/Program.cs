@@ -1,13 +1,13 @@
-﻿var john1 = new Person(1, "John");
-var marie1 = new Person(1, "Marie");
-var marie2 = new Person(2, "Marie");
+﻿var point1 = new Point(3, 7);
+var point2 = new Point(7, 10);
+var sum = point1 + point2;
 
-Console.WriteLine("john.Equals(marie1): " + john1.Equals(marie1));
-Console.WriteLine("john.Equals(marie2): " + john1.Equals(marie2));
+var pointTuple = (10, 20);
 
-var point1 = new Point(1, 5);
-var point2 = new Point(1, 5);
-Console.WriteLine("point1.Equals(point2): " + point1.Equals(point2));
+// Implicit conversion from ValuTuple to Point
+// Explicit conversion can also be implemented
+Point point3 = pointTuple;
+Point point4 = (30, 40);
 
 Console.ReadKey();
 
@@ -16,11 +16,21 @@ struct Point : IEquatable<Point>
     public int X { get; init; }
     public int Y { get; init; }
 
-    public Point(int x, int y)
-    {
-        X = x;
-        Y = y;
-    }
+    public Point(int x, int y) { X = x; Y = y; }
+
+    // operators overloading
+    public static Point operator +(Point p1, Point p2)
+        => new(p1.X + p2.X, p1.Y + p2.Y);
+
+    public static bool operator ==(Point p1, Point p2)
+        => p1.Equals(p2);
+
+    public static bool operator !=(Point p1, Point p2)
+        => !p1.Equals(p2);
+
+    // Using ValueTuple to avoid using Tuple.Create
+    public static implicit operator Point(ValueTuple<int, int> tuple)
+        => new(tuple.Item1, tuple.Item2);
 
     public override string ToString()
         => $"X: {X}, Y: {Y}";
