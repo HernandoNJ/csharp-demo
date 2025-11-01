@@ -1,27 +1,20 @@
-﻿var point1 = new Point(3, 7);
-var point2 = new Point(3, 7);
-var point3 = new Point(6, -1);
+﻿var tuple1 = new Tuple<string, bool>("aaa", true);
+var tuple2 = Tuple.Create(10, true);
+var tuple3 = Tuple.Create(10, true);
 
-// Default GetHashCode() implementation
-// It may be slow or cause many hash code conflicts
-Console.WriteLine("point1: " + point1.GetHashCode());
-Console.WriteLine("point2: " + point2.GetHashCode());
-Console.WriteLine("point3: " + point3.GetHashCode());
+Console.WriteLine($"tuple2 == tuple3: {tuple2 == tuple3}"); // false       
+Console.WriteLine($"tuple2.Equals(tuple3): "
+                  + $"{tuple2.Equals(tuple3)}"); // true
 
-var person1 = new Person(1, "Ana");
-var person1a = new Person(1, "Ana");
-var person2 = new Person(2, "Bella");
-Console.WriteLine("person1: " + person1.GetHashCode());
-Console.WriteLine("person2: " + person1a.GetHashCode());
+var valueTuple1 = (x: 10, y: 20);
+var valueTuple2 = (x: 10, y: 20);
+
+Console.WriteLine($"valueTuple1 == valueTuple2: "
+                  + $"{valueTuple1 == valueTuple2}"); // true
+Console.WriteLine($"valueTuple1.Equals(valueTuple2): "
+                  + $"{valueTuple1.Equals(valueTuple2)}"); // true
 
 Console.ReadKey();
-
-struct Point3d(int x, int y, int z)
-{
-    public int X = x;
-    public int Y = y;
-    public int Z = z;
-}
 
 struct Point : IEquatable<Point>
 {
@@ -53,9 +46,6 @@ struct Point : IEquatable<Point>
     public bool Equals(Point other)
         => X == other.X && Y == other.Y;
 
-    // It takes any objects and combines their hash codes
-    // The objects can be anything and more than two items
-    // Also, Equals() and this method are aligned by using X,Y
     public override int GetHashCode()
         => HashCode.Combine(X, Y);
 }
