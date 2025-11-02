@@ -1,69 +1,65 @@
-﻿// Pure function: no side effects, output depends only on input
-var numbers = new List<int> { 1, 2, 3, 4 };
-int Sum(IEnumerable<int> numbers)
+﻿
+var weatherDataPositionalRec = new WeatherDataPositionalRecord(25.1m, 65);
+var warmerWeatherData = weatherDataPositionalRec with { Temperature = 30 };
+Console.ReadKey();
+
+public class WeatherData : IEquatable<WeatherData?>
 {
-    int sum = 0;
-    foreach (var number in numbers)
-        sum += number;
-    return sum;
+    public decimal Temperature { get; }
+    public int Humidity { get; }
+
+    public WeatherData(decimal temperature, int humidity)
+    {
+        Temperature = temperature;
+        Humidity = humidity;
+    }
+
+    public override string ToString()
+        => $"Temperature: {Temperature}, Humidity: {Humidity}";
+
+    public override bool Equals(object? obj)
+        => Equals(obj as WeatherData);
+
+    public bool Equals(WeatherData? other)
+        => other is not null
+           && Temperature == other.Temperature
+           && Humidity == other.Humidity;
+
+    public override int GetHashCode()
+        => HashCode.Combine(Temperature, Humidity);
+
+    public static bool operator ==(WeatherData? left, WeatherData? right)
+        => EqualityComparer<WeatherData>.Default.Equals(left, right);
+
+    public static bool operator !=(WeatherData? left, WeatherData? right)
+        => !(left == right);
 }
 
-// calling pure function multiple times is safe
-Console.WriteLine(Sum(numbers)); // 10
-Console.WriteLine(Sum(numbers)); // 10 again, always same result
-
-// *************
-
-var numbersA = new List<int> { 1, 2, 3 };
-
-// Shared state
-// Needs to be reset to 0 before test
-var _sum = 0;
-
-// Impure: modifies shared state
-int SumSoFar(int number)
+// Record
+public class WeatherDataRecord
 {
-    _sum += number; // Alters the field of the class
-    return _sum; // result depends on a field
+    // Allows setting the value of a property
+    public decimal Temperature { get; set; }
+    public int Humidity { get; }
+
+    public WeatherDataRecord(decimal temperature, int humidity)
+    {
+        Temperature = temperature;
+        Humidity = humidity;
+    }
+
+    // Allows creating custom methods
+    public void SomeMethod()
+    {
+
+    }
 }
 
-// Impure: modifies external object
-void Add(List<int> list, int number)
-{
-    // Alters input parameter
-    list.Add(number);
-}
+// Positional Record
+public record WeatherDataPositionalRecord(decimal Temperature, int Humidity);
 
-// Impure SumSoFar result depends on previous calls
-Console.WriteLine(SumSoFar(5)); // 5
-Console.WriteLine(SumSoFar(3)); // 8 (depends on previous state)
-Console.WriteLine(SumSoFar(2)); // 10
+// Positional record struct, mutable
+public record struct RectangleMutableRecord(int X, int Y);
 
-// Impure Add modifies original list
-Add(numbersA, 4);
-
-// ************
-
-// Identity mutation
-var dictionary = new Dictionary<Person, string>();
-var person = new Person("123456", "Ana", 1990);
-
-// person is the key
-// The hash code is calculated based on the Id
-dictionary[person] = "aaa";
-
-// The field Id is mutable, so it can be modified
-// and the hashcode used by the dictionary is lost
-person.Id = "new Id";
-Console.WriteLine(dictionary[person]);
-
-//Console.ReadKey();
-
-public class Person(string id, string name, int birthYear)
-{
-    public string Id = id;
-    public string Name = name;
-    public int BirthYear = birthYear;
-
-    public override int GetHashCode() => Id.GetHashCode();
-}
+// Positional record struct, immutable
+public readonly record struct RectangleImmutableRecord(int X, int Y);
