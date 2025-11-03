@@ -1,65 +1,25 @@
-﻿
-var weatherDataPositionalRec = new WeatherDataPositionalRecord(25.1m, 65);
-var warmerWeatherData = weatherDataPositionalRec with { Temperature = 30 };
+﻿// int? numberOrNull = null -> is assigning an instance of new struct Nullable<int>();
+int? numberOrNull = null;
+Nullable<bool> boolOrNull1 = null;
+Nullable<bool> boolOrNull2 = true;
+
+var heights = new List<Nullable<int>>
+{
+    140, null, 170, null, 140
+};
+
+var heights2 = new List<int?>
+{
+    160, null, 220, null, 160
+};
+
+var averageHeights = heights.Average();
+
+var averageHeights2 = heights2
+    .Where(height => height is not null)
+    .Average();
+
+Console.WriteLine("Average height: " + averageHeights);
+Console.WriteLine("Average2 height: " + averageHeights2);
+
 Console.ReadKey();
-
-public class WeatherData : IEquatable<WeatherData?>
-{
-    public decimal Temperature { get; }
-    public int Humidity { get; }
-
-    public WeatherData(decimal temperature, int humidity)
-    {
-        Temperature = temperature;
-        Humidity = humidity;
-    }
-
-    public override string ToString()
-        => $"Temperature: {Temperature}, Humidity: {Humidity}";
-
-    public override bool Equals(object? obj)
-        => Equals(obj as WeatherData);
-
-    public bool Equals(WeatherData? other)
-        => other is not null
-           && Temperature == other.Temperature
-           && Humidity == other.Humidity;
-
-    public override int GetHashCode()
-        => HashCode.Combine(Temperature, Humidity);
-
-    public static bool operator ==(WeatherData? left, WeatherData? right)
-        => EqualityComparer<WeatherData>.Default.Equals(left, right);
-
-    public static bool operator !=(WeatherData? left, WeatherData? right)
-        => !(left == right);
-}
-
-// Record
-public class WeatherDataRecord
-{
-    // Allows setting the value of a property
-    public decimal Temperature { get; set; }
-    public int Humidity { get; }
-
-    public WeatherDataRecord(decimal temperature, int humidity)
-    {
-        Temperature = temperature;
-        Humidity = humidity;
-    }
-
-    // Allows creating custom methods
-    public void SomeMethod()
-    {
-
-    }
-}
-
-// Positional Record
-public record WeatherDataPositionalRecord(decimal Temperature, int Humidity);
-
-// Positional record struct, mutable
-public record struct RectangleMutableRecord(int X, int Y);
-
-// Positional record struct, immutable
-public readonly record struct RectangleImmutableRecord(int X, int Y);
