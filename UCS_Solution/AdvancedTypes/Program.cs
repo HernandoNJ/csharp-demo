@@ -1,25 +1,69 @@
-﻿// int? numberOrNull = null -> is assigning an instance of new struct Nullable<int>();
-int? numberOrNull = null;
-Nullable<bool> boolOrNull1 = null;
-Nullable<bool> boolOrNull2 = true;
+﻿// Enforce non-null at construction instead of many null checks
+// Nullable reference types help the compiler detect possible nulls
 
-var heights = new List<Nullable<int>>
+var houses = new[]
 {
-    140, null, 170, null, 140
+    new House("name1", new Address("Street1", "453")),
+    new House("name2", null) // ❌ will throw exception at runtime
 };
 
-var heights2 = new List<int?>
+foreach (var house in houses)
 {
-    160, null, 220, null, 160
-};
+    Console.WriteLine($"Owner: {house.OwnerName}, "
+                      + $"Address: {house.Address.Street}, {house.Address.Number}");
+}
 
-var averageHeights = heights.Average();
+static string FormatHouseData(IEnumerable<House> houses) =>
+    string.Join("\n", 
+    houses.Select(house =>
+        $"Owner: {house.OwnerName}, " +
+        $"Address: {house.Address.Number} {house.Address.Street}"));
+// ⚠️ Requires non-null Address; enforced via constructors below
 
-var averageHeights2 = heights2
-    .Where(height => height is not null)
-    .Average();
+static int GetLength(string? nullableText)
+{
+    // warning: nullable text may be null here
+    return nullableText.Length;
+}
 
-Console.WriteLine("Average height: " + averageHeights);
-Console.WriteLine("Average2 height: " + averageHeights2);
+static int GetLength2(string? nullableText)
+{
+    if (nullableText == null) return 0;
+    return nullableText.Length;
+}
 
-Console.ReadKey();
+class House
+{
+    public string OwnerName { get; }
+    public Address Address { get; }
+
+    public House(string ownerName, Address address)
+    {
+        OwnerName = ownerName ?? throw new ArgumentNullException(nameof(ownerName));
+        Address = address ?? throw new ArgumentNullException(nameof(address));
+    }
+}
+
+class Address
+{
+    public string Street { get; }
+    public string Number { get; }
+
+    public Address(string street, string number)
+    {
+        Street = street ?? throw new ArgumentNullException(nameof(street));
+        Number = number ?? throw new ArgumentNullException(nameof(number));
+    }
+}
+
+class Address2
+{
+    public string Street { get; }
+    public string Number { get; }
+
+    public Address2(string number)
+    {
+        Number = number;
+    }
+}
+
