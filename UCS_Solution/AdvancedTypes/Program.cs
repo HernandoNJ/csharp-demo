@@ -1,84 +1,76 @@
-﻿// Topics: Reading data from a public API using async and await
-
-/* The 'using' keyword ensures the client object is automatically disposed
-   when the method ends, preventing memory and socket leaks.
-   It’s shorthand for: using (var client = new HttpClient()) { ... }
-   Since HttpClient implements IDisposable, it must be disposed properly.
-   However, in real applications, it’s recommended to reuse a single static
-   HttpClient instance instead of creating one per request. */
-
-/* Example of a reusable HttpClient service:
-public static class HttpService
-{
-    private static readonly HttpClient client = new HttpClient();
-
-    public static async Task<string> GetDataAsync(string url)
-    {
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync();
-    }
-}
-*/
-
-// Async methods execute without blocking the main thread, allowing other code to run concurrently.
-// 'await' pauses the execution until the awaited task completes and returns its result.
+﻿/* Topics: 
+ Class that read json from an open api
+ How to make a method asynchronous.
+ Deserializing json data to C# objects*/
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
-using var client = new HttpClient 
-{ BaseAddress = new Uri("https://api.census.gov/data/") };
+var baseAddress = "https://swapi.dev/api/"; ;
+var requestUri= "planets";
 
-var results = new List<object>();
+IApiDataReader apiDataReader = new ApiDataReader();
 
-// The previous api endpoint is not available
-// https://datausa.io/api/data?drilldowns=Nation&measures=Population
-// The new api endpoint response is available for each year, without 2020
-for (int year = 2014; year <= 2024; year++)
+/* Read() is asynchronous, runs in the background and returns a Task<string>
+ A Task acts like a promise — it takes some time to provide the final result
+ The 'await' keyword tells the program to pause here until the Task completes
+ then it extracts the string from the result of Task<string> Read().*/
+var json = await apiDataReader.Read(baseAddress, requestUri);
+var root = JsonSerializer.Deserialize<Root>(json);
+
+if(root != null)
 {
-    if (year == 2020) continue;
-
-    string endpoint = $"{year}/acs/acs1?get=NAME,B01003_001E&for=us:1";
-    HttpResponseMessage response = await client.GetAsync(endpoint);
-    response.EnsureSuccessStatusCode();
-
-    var jsonString = await response.Content.ReadAsStringAsync();
-
-    var json = JsonSerializer.Deserialize<object[][]>(jsonString);
-
-    if (json?.Length > 1)
+    foreach (var planet in root.results)
     {
-        AddItemsToJson(results, year, json);
+        Console.WriteLine($"Name: {planet.name}, "
+                          + $"Population: {planet.population}");
     }
 }
-
-// Serialized json with data as the sample json
-string formatted = JsonSerializer
-    .Serialize(new { data = results },
-               new JsonSerializerOptions { WriteIndented = true });
-
-// Save to file
-await File.WriteAllTextAsync("us_population.json", formatted);
-
-Console.WriteLine("Data saved to us_population.json");
 
 Console.ReadKey();
 
-static void AddItemsToJson(List<object> results, int year, object[][] json)
+public interface IApiDataReader
 {
-    string name = json[1][0]?.ToString() ?? "United States";
-    string popValue = json[1][1]?.ToString() ?? "0";
+    Task<string> Read(string baseAddress, string requestUri);
+}
 
-    if (int.TryParse(popValue, out int population))
+public class ApiDataReader : IApiDataReader
+{
+    // await can only be used inside asynchronous methods
+    // All async methods return Tasks, in this case, Task<string>
+    public async Task<string> Read(string baseAddress, string requestUri)
     {
-        results.Add(new
-        {
-            ID_Nation = "01000US",
-            Nation = name,
-            ID_Year = year,
-            Year = year.ToString(),
-            Population = population,
-            Slug_Nation = "united-states"
-        });
+        using var client = new HttpClient();
+        client.BaseAddress = new Uri(baseAddress);
+        HttpResponseMessage response = await client.GetAsync(requestUri);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsStringAsync();
     }
 }
+
+// Root myDeserializedClass = JsonSerializer.Deserialize<Root>(myJsonResponse);
+public record Result(
+    [property: JsonPropertyName("name")] string name,
+    [property: JsonPropertyName("rotation_period")] string rotation_period,
+    [property: JsonPropertyName("orbital_period")] string orbital_period,
+    [property: JsonPropertyName("diameter")] string diameter,
+    [property: JsonPropertyName("climate")] string climate,
+    [property: JsonPropertyName("gravity")] string gravity,
+    [property: JsonPropertyName("terrain")] string terrain,
+    [property: JsonPropertyName("surface_water")] string surface_water,
+    [property: JsonPropertyName("population")] string population,
+    [property: JsonPropertyName("residents")] IReadOnlyList<string> residents,
+    [property: JsonPropertyName("films")] IReadOnlyList<string> films,
+    [property: JsonPropertyName("created")] DateTime created,
+    [property: JsonPropertyName("edited")] DateTime edited,
+    [property: JsonPropertyName("url")] string url
+);
+
+public record Root(
+    [property: JsonPropertyName("count")] int count,
+    [property: JsonPropertyName("next")] string next,
+    [property: JsonPropertyName("previous")] object previous,
+    [property: JsonPropertyName("results")] IReadOnlyList<Result> results
+);
+
