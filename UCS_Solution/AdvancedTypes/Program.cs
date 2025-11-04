@@ -1,50 +1,84 @@
-﻿#nullable disable
-// nullable warning disabled from here 
-// to the end of the file or when enabled again
-// warning removed from null keyword
-string Text = null;
-#nullable enable
+﻿// Topics: Reading data from a public API using async and await
 
-string otherText = null; // string is not nullable
-string otherText1 = "Hi"; // string with a valid value
+/* The 'using' keyword ensures the client object is automatically disposed
+   when the method ends, preventing memory and socket leaks.
+   It’s shorthand for: using (var client = new HttpClient()) { ... }
+   Since HttpClient implements IDisposable, it must be disposed properly.
+   However, in real applications, it’s recommended to reuse a single static
+   HttpClient instance instead of creating one per request. */
 
-// Reference types (class): Person, List, String
-var person = new Person(null);
-var list = new List<int>();
+/* Example of a reusable HttpClient service:
+public static class HttpService
+{
+    private static readonly HttpClient client = new HttpClient();
 
-// otherText is not nullable
-SomeMethodClassConstraint(otherText);
-SomeMethodClassConstraint(otherText1);
+    public static async Task<string> GetDataAsync(string url)
+    {
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+}
+*/
 
-SomeMethodNullableClassConstraint(otherText);
-SomeMethodNullableClassConstraint(otherText1);
-SomeMethodNullableClassConstraint(Text);
-SomeMethodNullableClassConstraint(list);
+// Async methods execute without blocking the main thread, allowing other code to run concurrently.
+// 'await' pauses the execution until the awaited task completes and returns its result.
 
-var baseAnimal = new BaseAnimal();
-var dog = new Dog();
+using System.Text.Json;
 
-SomeMethodNullableBaseClass(baseAnimal);
-SomeMethodNullableDerivedClass(dog);
+using var client = new HttpClient 
+{ BaseAddress = new Uri("https://api.census.gov/data/") };
+
+var results = new List<object>();
+
+// The previous api endpoint is not available
+// https://datausa.io/api/data?drilldowns=Nation&measures=Population
+// The new api endpoint response is available for each year, without 2020
+for (int year = 2014; year <= 2024; year++)
+{
+    if (year == 2020) continue;
+
+    string endpoint = $"{year}/acs/acs1?get=NAME,B01003_001E&for=us:1";
+    HttpResponseMessage response = await client.GetAsync(endpoint);
+    response.EnsureSuccessStatusCode();
+
+    var jsonString = await response.Content.ReadAsStringAsync();
+
+    var json = JsonSerializer.Deserialize<object[][]>(jsonString);
+
+    if (json?.Length > 1)
+    {
+        AddItemsToJson(results, year, json);
+    }
+}
+
+// Serialized json with data as the sample json
+string formatted = JsonSerializer
+    .Serialize(new { data = results },
+               new JsonSerializerOptions { WriteIndented = true });
+
+// Save to file
+await File.WriteAllTextAsync("us_population.json", formatted);
+
+Console.WriteLine("Data saved to us_population.json");
 
 Console.ReadKey();
 
-// class: non-nullable reference type
-void SomeMethodClassConstraint<T>(T input) where T : class { }
-
-// class?: allows nullable and non-nullable values
-void SomeMethodNullableClassConstraint<T>(T input) where T : class? { }
-
-// ? works for base and derived classes
-void SomeMethodNullableBaseClass<T>(T input) where T : BaseAnimal? { }
-void SomeMethodNullableDerivedClass<T>(T input) where T : Dog { }
-
-// string name is not nullable, so it doesn't allow null as value
-// string? allows null as value
-class Person(string? name)
+static void AddItemsToJson(List<object> results, int year, object[][] json)
 {
-    public string Name { get; } = name;
-}
+    string name = json[1][0]?.ToString() ?? "United States";
+    string popValue = json[1][1]?.ToString() ?? "0";
 
-class BaseAnimal { }
-class Dog : BaseAnimal { }
+    if (int.TryParse(popValue, out int population))
+    {
+        results.Add(new
+        {
+            ID_Nation = "01000US",
+            Nation = name,
+            ID_Year = year,
+            Year = year.ToString(),
+            Population = population,
+            Slug_Nation = "united-states"
+        });
+    }
+}
