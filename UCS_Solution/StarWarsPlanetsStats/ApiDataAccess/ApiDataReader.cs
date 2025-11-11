@@ -1,53 +1,15 @@
-﻿using System.Text.Json;
+﻿
 using System.Text.Json.Serialization;
 
-// name, diameter, population, surface_water
-// Custom type: class, struct, record, record struct?
-// Nullable or non-nullable types?
-// Mutable or immutable?
-// Exception handling
-// Dependency Injection
-// SRP
-var baseAddress = "https://swapi.dev";
-var requestUri = "api/planets";
-
-IApiDataReader apiDataReader = new ApiDataReader();
-
-var json = await apiDataReader.Read(baseAddress, requestUri);
-var root = JsonSerializer.Deserialize<Root>(json);
-
-if (root != null)
-{
-    foreach (var planet in root.results)
-    {
-        Console.WriteLine(
-            $"Name: {planet.name} \n" +
-            $"Diameter: {planet.diameter} \n" +
-            $"Population: {planet.population} \n" +
-            $"Surface water: {planet.surface_water}");
-
-        Console.WriteLine();
-    }
-}
-
-Console.ReadKey();
-
-public interface IApiDataReader
-{
-    Task<string> Read(string baseAddress, string requestUri);
-}
-
+namespace StarWarsPlanetsStats.ApiDataAccess;
 public class ApiDataReader : IApiDataReader
 {
-    // await can only be used inside asynchronous methods
-    // All async methods return Tasks, in this case, Task<string>
     public async Task<string> Read(string baseAddress, string requestUri)
     {
         using var client = new HttpClient();
         client.BaseAddress = new Uri(baseAddress);
         HttpResponseMessage response = await client.GetAsync(requestUri);
         response.EnsureSuccessStatusCode();
-
         return await response.Content.ReadAsStringAsync();
     }
 }
@@ -76,4 +38,3 @@ public record Root(
     [property: JsonPropertyName("previous")] object previous,
     [property: JsonPropertyName("results")] IReadOnlyList<Result> results
 );
-
